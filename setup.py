@@ -15,8 +15,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "boto3>=1.34.0",
-        "pandas",
-        "torchvision",
+        "pandas"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
