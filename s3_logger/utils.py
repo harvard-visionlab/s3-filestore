@@ -1,4 +1,3 @@
-
 from . import auth
 
 def get_url(bucket_name, object_name, bucket_region=None, profile='wasabi'):
