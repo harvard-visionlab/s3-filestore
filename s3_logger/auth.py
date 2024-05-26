@@ -69,3 +69,13 @@ def get_client_with_userdata(profile='wasabi'):
 
     return s3_client
 
+def get_public_s3_object_url(bucket_name, object_name):
+    s3_client = boto3.client('s3')
+    response = s3_client.generate_presigned_url('get_object',
+                                                Params={'Bucket': bucket_name,
+                                                        'Key': object_name},
+                                                ExpiresIn=0,
+                                                HttpMethod='GET')
+
+    return response      
+

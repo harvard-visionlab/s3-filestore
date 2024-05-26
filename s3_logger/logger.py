@@ -17,8 +17,10 @@ from . import auth
 from .utils import get_url
 
 class S3Logger(object):
-    def __init__(self, bucket_name, profile='wasabi', endpoint_url=None, acl='public-read', hash_length=10):        
+    def __init__(self, bucket_name, profile='wasabi', endpoint_url=None, acl='public-read', hash_length=10, cache_dir=None):        
+        if cache_dir is None: cache_dir = F.CACHE_DIR
 
+        self.cache_dir = cache_dir
         self.profile = profile
         if endpoint_url is None:
             self.endpoint_url = auth.WASABI_ENDPOINT if 'wasabi' in profile else auth.AWS_ENDPOINT
@@ -55,12 +57,13 @@ class S3Logger(object):
     def load_file(self, filename):
         return F.load_file(filename)
 
-    def download_file_from_bucket(self, bucket_name, bucket_key):
-        url = get_url(bucket_name, bucket_key, profile=self.profile)
-        return F.download_if_needed(url)
+    def download_object_from_bucket(self, bucket_key, cache_dir=None, progress=True, check_hash=True):
+        if cache_dir is None: cache_dir = self.cache_dir
+        return F.download_object(self.bucket.name, bucket_key, self.profile, cache_dir=cache_dir, progress=progress, check_hash=check_hash)
 
-    def download_file_from_url(url):
-        return F.download_if_needed(url)
+    def download_file_from_url(self, url, cache_dir=None, progress=True, check_hash=True):
+        if cache_dir is None: cache_dir = self.cache_dir
+        return F.download_if_needed(url, cache_dir=cache_dir, progress=progress, check_hash=check_hash)
 
     def upload_file(self, local_filename, bucket_subfolder, new_filename=None, acl=None, hash_length=None, verbose=True):
         if acl is None: acl = self.acl
@@ -76,5 +79,7 @@ class S3Logger(object):
     def __repr__(self):
         return (f"{self.__class__.__name__}(bucket_name={self.bucket_name!r}, profile={self.profile!r}, "
                 f"endpoint_url={self.endpoint_url!r}, bucket_region={self.bucket_region!r},\n"
-                f"\t acl={self.acl!r}, hash_length={self.hash_length!r})")
+                f"\t acl={self.acl!r}, hash_length={self.hash_length!r}, "
+                f"cache_dir={self.cache_dir!r})")
+
     
