@@ -15,9 +15,9 @@ from .utils import get_url
 HASH_REGEX = re.compile(r'-([a-f0-9]*)\.')
 CACHE_DIR = torch.hub.get_dir().replace("/hub", "/results")
 
-def download_object(bucket_name, bucket_key, profile, cache_dir=None, progress=True, check_hash=True):
+def download_object(bucket_name, bucket_key, profile, bucket_region=None, cache_dir=None, progress=True, check_hash=True):
     if cache_dir is None: cache_dir = CACHE_DIR
-    url = get_url(bucket_name, bucket_key, profile=profile)
+    url = get_url(bucket_name, bucket_key, bucket_region=bucket_region, profile=profile)
     response = download_if_needed(url, cache_dir=cache_dir, progress=progress, check_hash=check_hash)
     return response
 

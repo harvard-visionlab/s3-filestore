@@ -76,11 +76,18 @@ class S3Logger(object):
     def load_file(self, filename):
         return F.load_file(filename)
 
-    def download_object_from_bucket(self, bucket_key, cache_dir=None, progress=True, check_hash=True):
+    def download_object(self, bucket_key, cache_dir=None, progress=True, check_hash=True):
         if cache_dir is None: cache_dir = self.cache_dir
-        return F.download_object(self.bucket.name, bucket_key, self.profile, cache_dir=cache_dir, progress=progress, check_hash=check_hash)
+        return F.download_object(self.bucket.name, bucket_key, self.profile, bucket_region=self.bucket.region,
+                                 cache_dir=cache_dir, progress=progress, check_hash=check_hash)
 
-    def download_file_from_url(self, url, cache_dir=None, progress=True, check_hash=True):
+    def download_objects(self, objects, cache_dir=None, progress=True, check_hash=True):
+        filenames = [self.download_object(object_key, cache_dir=cache_dir, progress=progress, check_hash=check_hash) 
+                     for object_key in objects]
+
+        return filenames
+
+    def download_url(self, url, cache_dir=None, progress=True, check_hash=True):
         if cache_dir is None: cache_dir = self.cache_dir
         return F.download_if_needed(url, cache_dir=cache_dir, progress=progress, check_hash=check_hash)
 
