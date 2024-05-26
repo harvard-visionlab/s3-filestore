@@ -46,7 +46,7 @@ class S3Logger(object):
         self.bucket = self.s3.Bucket(self.bucket_name)
         self.bucket.region = region_name
 
-    def list_objects(self, prefix='', depth=None, include_directories=True):
+    def list_objects(self, prefix='', depth=None, include_directories=True, verbose=True):
         """
         List objects in an S3 bucket with optional depth and directory exclusion.
         
@@ -56,14 +56,23 @@ class S3Logger(object):
         - include_directories: Whether to include directories in the listing.
         """
         bucket = self.bucket
+        objects = []
         for obj in bucket.objects.filter(Prefix=prefix):
             # Check if the key is directly within the specified depth
             if depth is None or (obj.key[len(prefix):].count('/') - 1) <= depth:
                 # If include_directories is False, skip keys that end with a '/'
                 if not include_directories and obj.key.endswith('/'):
                     continue
-                print(obj.key)
-    
+                if verbose: print(obj.key)
+                objects.append(obj.key)
+        return objects 
+
+    def list_urls(self, prefix='', depth=None, verbose=False):
+        objects = self.list_objects(prefix=prefix, depth=depth, include_directories=False, verbose=verbose)
+        urls = [get_url(self.bucket.name, bucket_key, bucket_region=self.bucket.region, profile=self.profile) 
+                for bucket_key in objects]
+        return urls 
+        
     def load_file(self, filename):
         return F.load_file(filename)
 
