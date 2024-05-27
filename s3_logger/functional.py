@@ -133,11 +133,7 @@ def upload_buffer(s3_client, bucket, buf, object_key, acl=None, verbose=True, pr
     return object_url    
 
 def load_file(filename):
-    local_filename = filename
-    if filename.startswith("https://"):
-        local_filename = download_if_needed(filename)
-    elif filename.startswith("s3://"):
-        local_filename = download_if_needed(filename)
+    local_filename = filename    
     
     assert os.path.isfile(local_filename), f"File not found: {local_filename}"
 
@@ -156,7 +152,7 @@ def load_file(filename):
         for line in lines:
             print(line.strip())  # .strip() removes leading/trailing whitespace including newlines
         return lines
-    elif local_filename.endswith(".pth") or local_filename.endswith(".pt") or local_filename.endswith(".pth.tar") or local_filename.endswith(".np"):
+    elif local_filename.endswith(".pth") or local_filename.endswith(".pt") or local_filename.endswith(".pth.tar"):
         data = torch.load(local_filename, map_location='cpu')
         return data
     else:

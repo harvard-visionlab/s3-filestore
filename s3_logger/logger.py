@@ -15,7 +15,7 @@ from pdb import set_trace
 from . import functional as F
 from . import auth
 from . import api
-from .utils import get_object_name_with_hash_id
+from .utils import get_object_name_with_hash_id, parse_s3_url
 from .data import prepare_data_for_upload
 
 class S3Logger(object):
@@ -77,9 +77,30 @@ class S3Logger(object):
                                   profile=self.profile, expires_in_seconds=self.expires_in_seconds) 
                 for bucket_key in objects]
         return urls 
-        
-    def load_file(self, filename):
+    
+    def list_s3_urls(self, prefix='', depth=None, verbose=False):
+        objects = self.list_objects(prefix=prefix, depth=depth, include_directories=False, verbose=verbose)
+        urls = [f"s3://{self.bucket.name}/{bucket_key}" for bucket_key in objects]
+        return urls
+
+    def load_file(self, filename, cache_dir=None, progress=True, check_hash=True):
+        if cache_dir is None: cache_dir = self.cache_dir
+        if filename.startswith("https://"):
+            local_filename = self.download_url(filename, cache_dir=cache_dir, progress=progress, check_hash=check_hash)
+            return F.load_file(local_filename)
+        elif filename.startswith("s3://"):
+            bucket_name, bucket_key = parse_s3_url(filename)
+            bucket_region = self.bucket.region if bucket_name==self.bucket.name else None
+            local_filename = F.download_object(self.s3_client, bucket_name, bucket_key, self.profile, bucket_region=bucket_region,
+                                               cache_dir=cache_dir, progress=progress, check_hash=check_hash)
+            return F.load_file(local_filename)
         return F.load_file(filename)
+
+    def load_object(self, bucket_key, cache_dir=None, progress=True, check_hash=True):
+        if cache_dir is None: cache_dir = self.cache_dir
+        local_filename = F.download_object(self.s3_client, self.bucket.name, bucket_key, self.profile, bucket_region=self.bucket.region,
+                                           cache_dir=cache_dir, progress=progress, check_hash=check_hash)
+        return F.load_file(local_filename)
 
     def download_object(self, bucket_key, cache_dir=None, progress=True, check_hash=True):
         if cache_dir is None: cache_dir = self.cache_dir

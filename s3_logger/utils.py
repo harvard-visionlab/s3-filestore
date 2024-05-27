@@ -3,7 +3,16 @@ import boto3
 import hashlib
 
 from pathlib import Path
+from urllib.parse import urlparse
 
+def parse_s3_url(s3_url):
+    parsed_url = urlparse(s3_url)
+    
+    # Remove leading '/' from the path to get the bucket key
+    bucket_key = parsed_url.path.lstrip('/')
+    
+    return parsed_url.netloc, bucket_key
+    
 def append_hash_id_to_objectname(local_filename, object_name, hash_length):
     hash_id = get_file_hash(local_filename, hash_length=hash_length)
     object_name = f"{Path(object_name).stem}-{hash_id}{Path(object_name).suffix}"
