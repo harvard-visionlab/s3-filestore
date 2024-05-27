@@ -14,6 +14,8 @@ from pdb import set_trace
 
 from . import functional as F
 from . import auth
+from . import api
+from .utils import get_object_name_with_hash_id
 
 class S3Logger(object):
     def __init__(self, bucket_name, profile='wasabi', endpoint_url=None, acl='public-read', hash_length=10, cache_dir=None, expires_in_seconds=3600):        
@@ -97,18 +99,35 @@ class S3Logger(object):
         filenames = [self.download_url(url, cache_dir=cache_dir, progress=progress, check_hash=check_hash) 
                      for url in urls]
         
-        return filenames
+        return filenames    
 
-    def upload_file(self, local_filename, bucket_subfolder, new_filename=None, acl=None, hash_length=None, verbose=True):
+    def upload_file(self, local_filename, bucket_subfolder, new_filename=None, acl=None, hash_length=None, verbose=True, profile=None, expires_in_seconds=None):        
         if acl is None: acl = self.acl
         if hash_length is None: hash_length = self.hash_length
         if not bucket_subfolder.endswith('/'): bucket_subfolder += '/'
+        if profile is None: profile = self.profile
+        if expires_in_seconds is None: expires_in_seconds = self.expires_in_seconds
 
-        object_name = F.get_object_name_with_hash_id(local_filename, object_name=new_filename, hash_length=hash_length)
+        object_name = get_object_name_with_hash_id(local_filename, object_name=new_filename, hash_length=hash_length)
         object_key = urljoin(bucket_subfolder, object_name)
-        object_url = F.upload_file(self.s3, self.bucket, local_filename, object_key, acl=acl, verbose=verbose)
+        object_url = F.upload_file(self.s3_client, self.bucket, local_filename, object_key, acl=acl, 
+                                   verbose=verbose, profile=profile, expires_in_seconds=expires_in_seconds)
 
         return object_url
+
+    def upload_files(self, filenames, bucket_subfolder, acl=None, hash_length=None, verbose=True, profile=None, expires_in_seconds=None):
+        if isinstance(bucket_subfolder, (str)):
+            bucket_subfolders = [bucket_subfolder]*len(filenames)
+        elif isinstance(bucket_subfolders, (list,tuple)):
+            bucket_subfolders = bucket_subfolder
+
+        urls = [self.upload_file(local_filename, bucket_subfolder, acl=acl, hash_length=hash_length, verbose=verbose, 
+                                 profile=profile, expires_in_seconds=expires_in_seconds)
+                for local_filename,bucket_subfolder in zip(filenames, bucket_subfolders)]
+        return urls
+
+    def update_object_acl(self, object_key, acl, verbose=True):
+        return api.update_object_acl(self.s3_client, self.bucket.name, object_key, acl, verbose=verbose)
 
     def __repr__(self):
         return (f"{self.__class__.__name__}(bucket_name={self.bucket_name!r}, profile={self.profile!r}, "

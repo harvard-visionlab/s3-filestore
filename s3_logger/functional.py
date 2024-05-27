@@ -44,14 +44,16 @@ def download_if_needed(url, cache_dir=None, progress=True, check_hash=True) -> M
 
     return cache_filename
 
-def upload_file(s3, bucket, local_filename, object_key, acl=None, verbose=True):    
-
-    object_url = get_url(bucket.name, object_key, bucket_region=bucket.region)
+def upload_file(s3_client, bucket, local_filename, object_key, acl=None, verbose=True, profile='wasabi', expires_in_seconds=3600):        
     
+    # try getting the remote file size and comparing to local
+    # if remote not found (404), continue and upload the file
     try:
         s3_file_size = bucket.Object(object_key).content_length
         local_file_size = os.path.getsize(local_filename)
         if s3_file_size == local_file_size:
+            object_url = auth.generate_url(s3_client, bucket.name, object_key, bucket_region=bucket.region, 
+                                           profile=profile, expires_in_seconds=expires_in_seconds)
             if verbose: 
                 print(f"The file '{object_key}' already exists in the S3 bucket '{bucket.name}' and has the same size. The file will not be re-uploaded.\n")
                 print(object_url+"\n")
@@ -68,7 +70,9 @@ def upload_file(s3, bucket, local_filename, object_key, acl=None, verbose=True):
           raise e
 
     # Upload the file
-    s3.Object(bucket.name, object_key).put(Body=open(local_filename, 'rb'), ACL=acl)
+    bucket.Object(object_key).put(Body=open(local_filename, 'rb'), ACL=acl)
+    object_url = auth.generate_url(s3_client, bucket.name, object_key, bucket_region=bucket.region, 
+                                   profile=profile, expires_in_seconds=expires_in_seconds)
     if verbose: 
         print(f"The file '{object_key}' has been uploaded to the S3 bucket '{bucket.name}'.\n")            
         print(object_url+"\n")
