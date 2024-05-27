@@ -93,6 +93,12 @@ class S3Logger(object):
         if cache_dir is None: cache_dir = self.cache_dir
         return F.download_if_needed(url, cache_dir=cache_dir, progress=progress, check_hash=check_hash)
 
+    def download_urls(self, urls, cache_dir=None, progress=True, check_hash=True):
+        filenames = [self.download_url(url, cache_dir=cache_dir, progress=progress, check_hash=check_hash) 
+                     for url in urls]
+        
+        return filenames
+
     def upload_file(self, local_filename, bucket_subfolder, new_filename=None, acl=None, hash_length=None, verbose=True):
         if acl is None: acl = self.acl
         if hash_length is None: hash_length = self.hash_length
