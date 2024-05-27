@@ -1,7 +1,29 @@
 # s3-logger
-Code for saving experiment results to an s3 bucket
+Code for saving research outputs to an s3 bucket
+
+Part of the harvard-visionlab-stability-through-agility-code-for-science-initiative (HVSTACSI, pronounced "Ha-va-stacks-see", which is definitely a real thing).
+
+The goal is to easily store research outputs (model weights, .csv files, .json files, figures, etc.) in an s3 bucket (with either public-read or private access), and to just as easily download and access those files.
+
+For example:
+```
+# on your current workstation (laptop, cluster, anywhere)
+s3 = S3Logger('visionlab-results') # connect to the s3 bucket 'visionlab-results'
+url = s3.upload_file('results/output-file.csv', bucket_subfolder='alvarez/Projects/testing1234') 
+
+# on the same workstation or any other workstation
+s3 = S3Logger('visionlab-results')
+df = s3.load_file(url) # csv files automatically loaded as pandas dataframe
+
+# If you forgot what files you uploaded or their urls
+urls = s3.list_objects('alvarez/Projects/testing1234')
+print(urls) 
+df = s3.load_file(urls[0])
+```
 
 ## Installation
+
+boto3 will be installed with this package, but additional dependencies (torch, torchvision, numpy, pandas) are not automatically installed so that you can install s3-logger without fear of mucking up your environment.
 
 ```bash
 pip install git+https://github.com/harvard-visionlab/s3-logger.git
@@ -15,6 +37,6 @@ The main S3Logger class supports basic file upload/download and find operations.
 ```
 from s3_logger import S3Logger
 
-s3_logger = S3Logger('path/to/data')
+s3_logger = S3Logger('visionlab-results')
 s3_logger
 ```
