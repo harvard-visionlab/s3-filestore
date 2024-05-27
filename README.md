@@ -1,5 +1,5 @@
 # s3-logger
-Code for saving research outputs to an s3 bucket
+Code for saving reading/writing research outputs to an s3 bucket
 
 Part of the harvard-visionlab-stability-through-agility-code-for-science-initiative (HVSTACSI, pronounced "Ha-va-stacks-see", which is definitely a real thing).
 
