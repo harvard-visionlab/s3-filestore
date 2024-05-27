@@ -21,7 +21,7 @@ def contains_numpy_or_torch(data):
                     return True
     return False
 
-def prepare_data_for_upload(data, data_format=None):
+def prepare_data_for_upload(data, hash_length, data_format=None):
     """
     Prepare data for upload to S3 without writing to a file.
     

@@ -16,6 +16,7 @@ from . import functional as F
 from . import auth
 from . import api
 from .utils import get_object_name_with_hash_id
+from .data import prepare_data_for_upload
 
 class S3Logger(object):
     def __init__(self, bucket_name, profile='wasabi', endpoint_url=None, acl='public-read', hash_length=10, cache_dir=None, expires_in_seconds=3600):        
@@ -129,10 +130,29 @@ class S3Logger(object):
     def update_object_acl(self, object_key, acl, verbose=True):
         return api.update_object_acl(self.s3_client, self.bucket.name, object_key, acl, verbose=verbose)
 
+    def upload_data(self, data, bucket_key, data_format=None, acl=None, hash_length=None, verbose=True, profile=None, expires_in_seconds=None):
+        if acl is None: acl = self.acl
+        if hash_length is None: hash_length = self.hash_length
+        if profile is None: profile = self.profile
+        if expires_in_seconds is None: expires_in_seconds = self.expires_in_seconds
+
+        # get the buffer and hash_id
+        buf, hash_id, data_format = prepare_data_for_upload(data, hash_length, data_format=data_format)
+
+        # new filename with hash_id
+        path = Path(bucket_key)
+        bucket_subfolder = str(path.parent)
+        filename_with_hash_id = f"{path.stem}-{hash_id}{path.suffix}"
+        bucket_key = urljoin(bucket_subfolder, filename_with_hash_id)
+
+        url = F.upload_buffer(self.s3_client, self.bucket, buf, bucket_key, acl=acl, 
+                              verbose=verbose, profile=profile, expires_in_seconds=expires_in_seconds)
+
+        return bucket_key, url
+
     def __repr__(self):
         return (f"{self.__class__.__name__}(bucket_name={self.bucket_name!r}, profile={self.profile!r}, "
                 f"endpoint_url={self.endpoint_url!r}, bucket_region={self.bucket_region!r},\n"
                 f"\t acl={self.acl!r}, expires_in_seconds={self.expires_in_seconds!r}, hash_length={self.hash_length!r}, "
                 f"cache_dir={self.cache_dir!r})")
 
-    

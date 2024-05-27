@@ -79,6 +79,59 @@ def upload_file(s3_client, bucket, local_filename, object_key, acl=None, verbose
     
     return object_url  
 
+def upload_buffer(s3_client, bucket, buf, object_key, acl=None, verbose=True, profile='wasabi', expires_in_seconds=3600):
+    """
+    Upload a buffer to an S3 bucket, comparing sizes to avoid redundant uploads.
+    
+    Parameters:
+    - s3_client: The S3 client.
+    - bucket: The S3 bucket object.
+    - buf: The buffer containing the data to upload.
+    - object_key: The key for the S3 object.
+    - acl: The ACL for the uploaded object.
+    - verbose: Whether to print verbose messages.
+    - profile: The profile to use for generating the URL.
+    - expires_in_seconds: The expiry time for the generated URL.
+    
+    Returns:
+    - The URL of the uploaded object.
+    """
+    
+    # Move the buffer to the beginning
+    buf.seek(0)
+    buffer_size = len(buf.getvalue())
+    
+    try:
+        s3_file_size = bucket.Object(object_key).content_length
+        if s3_file_size == buffer_size:
+            object_url = auth.generate_url(s3_client, bucket.name, object_key, bucket_region=bucket.region, 
+                                           profile=profile, expires_in_seconds=expires_in_seconds)
+            if verbose: 
+                print(f"The file '{object_key}' already exists in the S3 bucket '{bucket.name}' and has the same size. The file will not be re-uploaded.\n")
+                print(object_url + "\n")
+            return object_url
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            # The key does not exist.
+            pass
+        elif e.response['Error']['Code'] == 403:
+            # Unauthorized, including invalid bucket
+            raise e
+        else:
+            # Something else has gone wrong.
+            raise e
+
+    # Upload the buffer
+    buf.seek(0)
+    bucket.Object(object_key).put(Body=buf, ACL=acl)
+    object_url = auth.generate_url(s3_client, bucket.name, object_key, bucket_region=bucket.region, 
+                                   profile=profile, expires_in_seconds=expires_in_seconds)
+    if verbose: 
+        print(f"The file '{object_key}' has been uploaded to the S3 bucket '{bucket.name}'.\n")            
+        print(object_url + "\n")
+    
+    return object_url    
+
 def load_file(filename):
     local_filename = filename
     if filename.startswith("https://"):
