@@ -14,10 +14,9 @@ from pdb import set_trace
 
 from . import functional as F
 from . import auth
-from .utils import get_url
 
 class S3Logger(object):
-    def __init__(self, bucket_name, profile='wasabi', endpoint_url=None, acl='public-read', hash_length=10, cache_dir=None):        
+    def __init__(self, bucket_name, profile='wasabi', endpoint_url=None, acl='public-read', hash_length=10, cache_dir=None, expires_in_seconds=3600):        
         if cache_dir is None: cache_dir = F.CACHE_DIR
 
         self.cache_dir = cache_dir
@@ -28,6 +27,7 @@ class S3Logger(object):
             self.endpoint_url = endpoint_url
         
         self.acl = acl
+        self.expires_in_seconds = expires_in_seconds
         self.hash_length = hash_length
         self.bucket_name = bucket_name
         self.set_session_bucket()
@@ -42,6 +42,7 @@ class S3Logger(object):
         # now we can start a proper session and setup bucket access:
         self.bucket_region = region_name
         self.session = auth.get_session_with_userdata(self.profile, region_name=region_name)
+        self.s3_client = self.session.client('s3', endpoint_url=endpoint_url)
         self.s3 = self.session.resource('s3', endpoint_url=endpoint_url)
         self.bucket = self.s3.Bucket(self.bucket_name)
         self.bucket.region = region_name
@@ -69,7 +70,8 @@ class S3Logger(object):
 
     def list_urls(self, prefix='', depth=None, verbose=False):
         objects = self.list_objects(prefix=prefix, depth=depth, include_directories=False, verbose=verbose)
-        urls = [get_url(self.bucket.name, bucket_key, bucket_region=self.bucket.region, profile=self.profile) 
+        urls = [auth.generate_url(self.s3_client, self.bucket.name, bucket_key, bucket_region=self.bucket.region, 
+                                  profile=self.profile, expires_in_seconds=self.expires_in_seconds) 
                 for bucket_key in objects]
         return urls 
         
@@ -78,7 +80,7 @@ class S3Logger(object):
 
     def download_object(self, bucket_key, cache_dir=None, progress=True, check_hash=True):
         if cache_dir is None: cache_dir = self.cache_dir
-        return F.download_object(self.bucket.name, bucket_key, self.profile, bucket_region=self.bucket.region,
+        return F.download_object(self.s3_client, self.bucket.name, bucket_key, self.profile, bucket_region=self.bucket.region,
                                  cache_dir=cache_dir, progress=progress, check_hash=check_hash)
 
     def download_objects(self, objects, cache_dir=None, progress=True, check_hash=True):
@@ -105,7 +107,7 @@ class S3Logger(object):
     def __repr__(self):
         return (f"{self.__class__.__name__}(bucket_name={self.bucket_name!r}, profile={self.profile!r}, "
                 f"endpoint_url={self.endpoint_url!r}, bucket_region={self.bucket_region!r},\n"
-                f"\t acl={self.acl!r}, hash_length={self.hash_length!r}, "
+                f"\t acl={self.acl!r}, expires_in_seconds={self.expires_in_seconds!r}, hash_length={self.hash_length!r}, "
                 f"cache_dir={self.cache_dir!r})")
 
     

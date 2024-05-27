@@ -77,5 +77,52 @@ def get_public_s3_object_url(bucket_name, object_name):
                                                 ExpiresIn=0,
                                                 HttpMethod='GET')
 
-    return response      
+    return response    
+
+def generate_url(s3_client, bucket_name, bucket_key, bucket_region=None, profile='wasabi', expires_in_seconds=3600):
+    if is_object_private(s3_client, bucket_name, bucket_key):        
+        url = generate_presigned_url(s3_client, bucket_name, bucket_key, expires_in_seconds=expires_in_seconds)
+    else:
+        url = get_url(bucket_name, bucket_key, bucket_region=bucket_region, profile=profile)
+    
+    return url
+
+def get_url(bucket_name, object_name, bucket_region=None, profile='wasabi'):
+    domain = 'wasabisys.com' if 'wasabi' in profile else 'amazonaws.com'
+
+    if bucket_region is None:
+        bucket_region = get_bucket_location(bucket_name, profile=profile)
+
+    # Construct the object URL
+    object_url = f"https://s3.{bucket_region}.{domain}/{bucket_name}/{object_name}"
+    
+    return object_url
+
+def generate_presigned_url(s3_client, bucket_name, object_name, expires_in_seconds=3600):
+    signed_url = s3_client.generate_presigned_url('get_object', Params={'Bucket': bucket_name,
+                                                  'Key': object_name},
+                                                   ExpiresIn=expires_in_seconds,
+                                                   HttpMethod='GET')
+    return signed_url  
+
+def is_object_private(s3_client, bucket_name, object_key):
+    is_public = is_object_public(s3_client, bucket_name, object_key)
+    return is_public==False
+
+def is_object_public(s3_client, bucket_name, object_key):
+    try:
+        # Get the ACL of the object
+        acl = s3_client.get_object_acl(Bucket=bucket_name, Key=object_key)
+        # Check if the ACL grants public read access
+        for grant in acl['Grants']:
+            grantee = grant.get('Grantee', {})
+            permission = grant.get('Permission')
+            if grantee.get('URI') == 'http://acs.amazonaws.com/groups/global/AllUsers' and permission == 'READ':
+                return True
+        
+        return False
+    
+    except Exception as e:
+        print(f"Error getting ACL for {object_key} in {bucket_name}: {e}")
+        return False        
 

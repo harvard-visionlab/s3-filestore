@@ -10,14 +10,15 @@ from torch.hub import download_url_to_file
 from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
 from urllib.parse import urlparse
 
-from .utils import get_url
+from . import auth
 
 HASH_REGEX = re.compile(r'-([a-f0-9]*)\.')
 CACHE_DIR = torch.hub.get_dir().replace("/hub", "/results")
 
-def download_object(bucket_name, bucket_key, profile, bucket_region=None, cache_dir=None, progress=True, check_hash=True):
+def download_object(s3_client, bucket_name, bucket_key, profile, bucket_region=None, 
+                    cache_dir=None, progress=True, check_hash=True, expires_in_seconds=3600):
     if cache_dir is None: cache_dir = CACHE_DIR
-    url = get_url(bucket_name, bucket_key, bucket_region=bucket_region, profile=profile)
+    url = auth.generate_url(s3_client, bucket_name, bucket_key, bucket_region=bucket_region, profile=profile, expires_in_seconds=expires_in_seconds)    
     response = download_if_needed(url, cache_dir=cache_dir, progress=progress, check_hash=check_hash)
     return response
 

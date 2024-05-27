@@ -4,8 +4,6 @@ import hashlib
 
 from pathlib import Path
 
-from . import auth
-
 def append_hash_id_to_objectname(local_filename, object_name, hash_length):
     hash_id = get_file_hash(local_filename, hash_length=hash_length)
     object_name = f"{Path(object_name).stem}-{hash_id}{Path(object_name).suffix}"
@@ -19,17 +17,6 @@ def get_object_name_with_hash_id(local_filename, object_name=None, hash_length=N
     
     return object_name_hash_id
     
-def get_url(bucket_name, object_name, bucket_region=None, profile='wasabi'):
-    domain = 'wasabisys.com' if 'wasabi' in profile else 'amazonaws.com'
-
-    if bucket_region is None:
-        bucket_region = auth.get_bucket_location(bucket_name, profile=profile)
-
-    # Construct the object URL
-    object_url = f"https://s3.{bucket_region}.{domain}/{bucket_name}/{object_name}"
-    
-    return object_url
-
 def has_hash(filename):
     return len(Path(filename).stem.split("-")) == 2
 
