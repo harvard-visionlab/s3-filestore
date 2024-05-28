@@ -19,7 +19,7 @@ s3 = S3FileStore('visionlab-results')
 df = s3.load_file(url) # csv files automatically loaded as pandas dataframe
 
 # If you forgot what files you uploaded or their urls
-urls = s3.list_urls('alvarez/Projects/testing1234')
+urls = s3.list_s3_urls('alvarez/Projects/testing1234')
 print(urls) 
 df = s3.load_file(urls[0])
 ```
