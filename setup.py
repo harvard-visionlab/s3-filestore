@@ -4,14 +4,14 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="s3-logger",
+    name="s3-filestore",
     version="0.1.0",
     author="George Alvarez",
     author_email="alvarez@wjh.harvard.edu",
-    description="An s3 logger for experiment results",
+    description="An s3 filestore for experiment results",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/harvard-visionlab/s3-logger",
+    url="https://github.com/harvard-visionlab/s3-filestore",
     packages=find_packages(),
     install_requires=[
         "boto3>=1.34.0",
