@@ -29,7 +29,7 @@ df = s3.load_file(urls[0])
 boto3 will be installed with this package, but additional dependencies (torch, torchvision, numpy, pandas) are not automatically installed so that you can install s3-logger without fear of mucking up your environment.
 
 ```bash
-pip install git+https://github.com/harvard-visionlab/s3-logger.git
+pip install git+https://github.com/harvard-visionlab/s3-filestore.git
 ```
 
 ## Basic Usage
