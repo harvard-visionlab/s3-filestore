@@ -34,12 +34,18 @@ pip install git+https://github.com/harvard-visionlab/s3-filestore.git
 
 ## Basic Usage
 
-The main S3Logger class supports basic file upload/download and find operations.
+The main S3FileStore class supports basic file upload/download and find operations.
 
 **init logger:**
 ```
-from s3_logger import S3Logger
+from s3_filestore import S3FileStore
 
-s3_logger = S3Logger('visionlab-results')
+s3_logger = S3FileStore('visionlab-results')
 s3_logger
 ```
+
+## TODO
+- [ ] add detailed walkthrough
+- [ ] add demo colab notebook
+- [ ] add sync method
+- [ ] rename "load_file" and "upload_data" to "read" and "write"?
