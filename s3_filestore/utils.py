@@ -7,11 +7,18 @@ from urllib.parse import urlparse
 
 def parse_s3_url(s3_url):
     parsed_url = urlparse(s3_url)
+    bucket_name = parsed_url.netloc
     
-    # Remove leading '/' from the path to get the bucket key
-    bucket_key = parsed_url.path.lstrip('/')
+    # Remove leading '/' from the path and then remove the bucket name from it
+    full_path = parsed_url.path.lstrip('/')
     
-    return parsed_url.netloc, bucket_key
+    # Strip the bucket name from the beginning of the full_path
+    if full_path.startswith(bucket_name + '/'):
+        bucket_key = full_path[len(bucket_name) + 1:]
+    else:
+        bucket_key = full_path
+
+    return bucket_name, bucket_key
     
 def append_hash_id_to_objectname(local_filename, object_name, hash_length):
     hash_id = get_file_hash(local_filename, hash_length=hash_length)
