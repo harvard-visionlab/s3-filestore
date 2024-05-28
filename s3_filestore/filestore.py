@@ -18,7 +18,7 @@ from . import api
 from .utils import get_object_name_with_hash_id, parse_s3_url
 from .data import prepare_data_for_upload
 
-class FileStore(object):
+class S3FileStore(object):
     def __init__(self, bucket_name, profile='wasabi', endpoint_url=None, acl='public-read', hash_length=10, cache_dir=None, expires_in_seconds=3600):        
         if cache_dir is None: cache_dir = F.CACHE_DIR
 
