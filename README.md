@@ -1,7 +1,7 @@
 # s3-filestore
 A Python package for uploading/downloading research outputs to an s3 bucket
 
-Part of the harvard-visionlab-stability-through-agility-code-for-science-initiative (HVSTACSI, pronounced "Ha-va-stacks-see", which is definitely a real thing).
+Part of the harvard-visionlab-stability-through-agility-code-for-science-initiative (HVSTACSI, pronounced "Ha-va-stacks-see"), which is definitely a real thing.
 
 The goal is to easily store research outputs (model weights, .csv files, .json files, figures, etc.) in an s3 bucket (with either public-read or private access), and to just as easily download and access those files.
 
