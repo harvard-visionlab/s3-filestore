@@ -1,5 +1,5 @@
 # s3-logger
-Code for uploading/downloading research outputs to an s3 bucket
+A Python package for uploading/downloading research outputs to an s3 bucket
 
 Part of the harvard-visionlab-stability-through-agility-code-for-science-initiative (HVSTACSI, pronounced "Ha-va-stacks-see", which is definitely a real thing).
 
