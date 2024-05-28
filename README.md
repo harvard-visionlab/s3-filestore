@@ -11,7 +11,8 @@ from s3_filestore import S3FileStore
 
 # on your current workstation (laptop, cluster, anywhere)
 s3 = S3FileStore('visionlab-results') # connect to the s3 bucket 'visionlab-results'
-url = s3.upload_file('results/output-file.csv', bucket_subfolder='alvarez/Projects/testing1234') 
+url = s3.upload_file('results/output-file.csv',
+                     bucket_subfolder='alvarez/Projects/testing1234') 
 
 # on the same workstation or any other workstation
 s3 = S3FileStore('visionlab-results')
