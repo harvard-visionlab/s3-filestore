@@ -1,4 +1,4 @@
-# s3-logger
+# s3-filestore
 A Python package for uploading/downloading research outputs to an s3 bucket
 
 Part of the harvard-visionlab-stability-through-agility-code-for-science-initiative (HVSTACSI, pronounced "Ha-va-stacks-see", which is definitely a real thing).
@@ -7,12 +7,14 @@ The goal is to easily store research outputs (model weights, .csv files, .json f
 
 For example:
 ```
+from s3_filestore import S3FileStore
+
 # on your current workstation (laptop, cluster, anywhere)
-s3 = S3Logger('visionlab-results') # connect to the s3 bucket 'visionlab-results'
+s3 = S3FileStore('visionlab-results') # connect to the s3 bucket 'visionlab-results'
 url = s3.upload_file('results/output-file.csv', bucket_subfolder='alvarez/Projects/testing1234') 
 
 # on the same workstation or any other workstation
-s3 = S3Logger('visionlab-results')
+s3 = S3FileStore('visionlab-results')
 df = s3.load_file(url) # csv files automatically loaded as pandas dataframe
 
 # If you forgot what files you uploaded or their urls
