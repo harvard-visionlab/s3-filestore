@@ -163,6 +163,7 @@ class S3FileStore(object):
         # new filename with hash_id
         path = Path(bucket_key)
         bucket_subfolder = str(path.parent)
+        if not bucket_subfolder.endswith('/'): bucket_subfolder += '/'
         filename_with_hash_id = f"{path.stem}-{hash_id}{path.suffix}"
         bucket_key = urljoin(bucket_subfolder, filename_with_hash_id)
 

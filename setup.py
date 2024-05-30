@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="s3-filestore",
-    version="0.1.0",
+    version="0.1.1",
     author="George Alvarez",
     author_email="alvarez@wjh.harvard.edu",
     description="An s3 filestore for experiment results",
