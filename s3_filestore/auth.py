@@ -1,6 +1,8 @@
 import os
 import boto3
 
+from .utils import is_url_public_readable, parse_s3_url
+
 WASABI_ENDPOINT = 'https://s3.wasabisys.com'
 AWS_ENDPOINT = 'https://s3.amazonaws.com'
 
@@ -126,5 +128,17 @@ def is_object_public(s3_client, bucket_name, object_key):
         print(f"Error getting ACL for {object_key} in {bucket_name}: {e}")
         return False   
     
-    
+def sign_url_if_needed(url, expires_in_seconds=3600, profile='wasabi'):
+    if is_url_public_readable(url):
+        return url
+        
+    bucket_name, object_name, _, _ = parse_s3_url(url)
+    s3_client = get_client_with_userdata(profile=profile)
+    response = s3_client.generate_presigned_url('get_object',
+                                                Params={'Bucket': bucket_name,
+                                                        'Key': object_name},
+                                                ExpiresIn=expires_in_seconds,
+                                                HttpMethod='GET')
+
+    return response     
 

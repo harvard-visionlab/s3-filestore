@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
+from pdb import set_trace
+
 def is_url_public_readable(url):
     try:
         response = requests.head(url)
@@ -19,6 +21,21 @@ def is_url_public_readable(url):
         print(f"Error checking URL: {e}")
         return False
     
+def parse_s3_uri(s3_url):
+    parsed_url = urlparse(s3_url)
+    bucket_name = parsed_url.netloc
+    
+    # Remove leading '/' from the path and then remove the bucket name from it
+    full_path = parsed_url.path.lstrip('/')
+    
+    # Strip the bucket name from the beginning of the full_path
+    if full_path.startswith(bucket_name + '/'):
+        bucket_key = full_path[len(bucket_name) + 1:]
+    else:
+        bucket_key = full_path
+
+    return bucket_name, bucket_key
+
 def parse_s3_url(url):
     default_region = 'us-east-1'
     bucket_name = None
@@ -35,6 +52,7 @@ def parse_s3_url(url):
     elif hostname.endswith('wasabisys.com'):
         domain = 'wasabisys.com'
     else:
+        set_trace()
         raise ValueError("URL is neither an AWS nor a Wasabi S3 URL")
 
     # Virtual-hosted-style URL
