@@ -124,5 +124,7 @@ def is_object_public(s3_client, bucket_name, object_key):
     
     except Exception as e:
         print(f"Error getting ACL for {object_key} in {bucket_name}: {e}")
-        return False        
+        return False   
+    
+    
 

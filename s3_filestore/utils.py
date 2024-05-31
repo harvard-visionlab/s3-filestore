@@ -1,24 +1,62 @@
 import os
 import boto3
 import hashlib
+import requests
+import re
 
 from pathlib import Path
 from urllib.parse import urlparse
 
-def parse_s3_url(s3_url):
-    parsed_url = urlparse(s3_url)
-    bucket_name = parsed_url.netloc
+def is_url_public_readable(url):
+    try:
+        response = requests.head(url)
+        # Check if the status code is 200
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+    except requests.RequestException as e:
+        print(f"Error checking URL: {e}")
+        return False
     
-    # Remove leading '/' from the path and then remove the bucket name from it
-    full_path = parsed_url.path.lstrip('/')
-    
-    # Strip the bucket name from the beginning of the full_path
-    if full_path.startswith(bucket_name + '/'):
-        bucket_key = full_path[len(bucket_name) + 1:]
-    else:
-        bucket_key = full_path
+def parse_s3_url(url):
+    default_region = 'us-east-1'
+    bucket_name = None
+    object_key = None
+    domain = None
+    region = default_region
 
-    return bucket_name, bucket_key
+    parsed_url = urlparse(url)
+    hostname = parsed_url.hostname
+    path = parsed_url.path
+
+    if hostname.endswith('amazonaws.com'):
+        domain = 'amazonaws.com'
+    elif hostname.endswith('wasabisys.com'):
+        domain = 'wasabisys.com'
+    else:
+        raise ValueError("URL is neither an AWS nor a Wasabi S3 URL")
+
+    # Virtual-hosted-style URL
+    match = re.match(r'^(?P<bucket_name>[^.]+)\.s3\.(?P<region>[^.]+)\.' + re.escape(domain), hostname)
+    if match:
+        bucket_name = match.group('bucket_name')
+        region = match.group('region')
+        object_key = path.lstrip('/')
+    else:
+        # Path-style URL
+        match = re.match(r'^s3\.(?P<region>[^.]+)\.' + re.escape(domain), hostname)
+        if match:
+            region = match.group('region')
+            # The path is of the form /bucket_name/object_key
+            path_parts = path.lstrip('/').split('/', 1)
+            if len(path_parts) == 2:
+                bucket_name, object_key = path_parts
+            elif len(path_parts) == 1:
+                bucket_name = path_parts[0]
+                object_key = ''
+    
+    return bucket_name, object_key, domain, region
     
 def append_hash_id_to_objectname(local_filename, object_name, hash_length):
     hash_id = get_file_hash(local_filename, hash_length=hash_length)
