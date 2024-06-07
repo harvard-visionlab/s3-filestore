@@ -50,26 +50,22 @@ class S3FileStore(object):
         self.bucket = self.s3.Bucket(self.bucket_name)
         self.bucket.region = region_name
 
-    def list_objects(self, prefix='', depth=None, include_directories=True, verbose=True):
+    def list_objects(self, prefix='', depth=None, directory_filter=True, verbose=False):
         """
         List objects in an S3 bucket with optional depth and directory exclusion.
-        
+
         Parameters:
         - prefix: The prefix (subfolder) to filter objects.
         - depth: The maximum depth of subfolders to include.
         - include_directories: Whether to include directories in the listing.
         """
-        bucket = self.bucket
-        objects = []
-        for obj in bucket.objects.filter(Prefix=prefix):
-            # Check if the key is directly within the specified depth
-            if depth is None or (obj.key[len(prefix):].count('/') - 1) <= depth:
-                # If include_directories is False, skip keys that end with a '/'
-                if not include_directories and obj.key.endswith('/'):
-                    continue
-                if verbose: print(obj.key)
-                objects.append(obj.key)
-        return objects 
+        objects = F.list_objects(self.bucket,
+                                 prefix=prefix,
+                                 depth=depth,
+                                 directory_filter=directory_filter,
+                                 verbose=verbose)
+
+        return objects  
 
     def list_urls(self, prefix='', depth=None, verbose=False):
         objects = self.list_objects(prefix=prefix, depth=depth, include_directories=False, verbose=verbose)

@@ -158,3 +158,50 @@ def load_file(filename):
     else:
         raise ValueError(f'Filetype must be one of csv, json, txt, pth, pt, pth.tar, np, got {local_filename}')      
 
+def list_objects(bucket, prefix='', depth=None, directory_filter=True, verbose=True):
+        """
+        List objects in an S3 bucket with optional depth and directory exclusion.
+
+        Parameters:
+        - prefix: The prefix (subfolder) to filter objects.
+        - depth: The maximum depth of subfolders to include.
+        - directory_filter: Filter to include everything (None), directories only (True), or files only (False).
+        - verbose: Whether to print the object keys.
+        """
+        objects = []
+        directories = set()
+        
+        # make sure prefix ends with /
+        prefix = prefix.strip("/") + "/"
+        
+        # iterate over objects with this prefix
+        for obj in bucket.objects.filter(Prefix=prefix):
+            # Calculate the depth of the object's key relative to the prefix
+            relative_key = obj.key[len(prefix):]
+            key_depth = relative_key.count('/')
+            
+            # Track implicit directories 
+            implicit_folders = relative_key.split("/")[0:key_depth]
+            for d in range(0, key_depth):
+                folder = prefix + "/".join(implicit_folders[0:d+1]) + "/"
+                if folder not in obj.key: continue
+                if depth is None or d==depth:
+                    directories.add(folder)
+
+            # Check if the key is directly within the specified depth
+            if depth is None or key_depth == depth:
+                # Directory filter logic
+                if directory_filter is None:
+                    pass  # Include everything
+                elif directory_filter and not obj.key.endswith('/'):
+                    continue  # Skip files if directory_filter is True
+                elif not directory_filter and obj.key.endswith('/'):
+                    continue  # Skip directories if directory_filter is False
+
+                if verbose: 
+                    print(obj.key)
+                objects.append(obj.key)
+        
+        if directory_filter:
+            return sorted(list(directories))
+        return objects  
