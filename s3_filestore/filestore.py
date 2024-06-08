@@ -50,7 +50,7 @@ class S3FileStore(object):
         self.bucket = self.s3.Bucket(self.bucket_name)
         self.bucket.region = region_name
 
-    def list_objects(self, prefix='', depth=None, directory_filter=True, verbose=False):
+    def list_objects(self, prefix='', depth=None, directory_filter=None, verbose=False):
         """
         List objects in an S3 bucket with optional depth and directory exclusion.
 
