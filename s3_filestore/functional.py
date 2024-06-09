@@ -5,6 +5,7 @@ import pandas as pd
 import botocore
 import re
 import json 
+from botocore.exceptions import ClientError
 
 from torch.hub import download_url_to_file
 from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
@@ -205,3 +206,15 @@ def list_objects(bucket, prefix='', depth=None, directory_filter=True, verbose=T
         if directory_filter:
             return sorted(list(directories))
         return objects  
+    
+def file_exists(s3_client, bucket_name, key):
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=key)
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            return False
+        else:
+            # Something else has gone wrong.
+            print(f"An error occurred: {e}")
+            raise

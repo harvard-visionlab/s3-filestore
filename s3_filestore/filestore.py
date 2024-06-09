@@ -66,7 +66,10 @@ class S3FileStore(object):
                                  verbose=verbose)
 
         return objects  
-
+    
+    def file_exists(self, key):
+        return F.file_exists(self.s3_client, self.bucket.name, key)
+    
     def list_urls(self, prefix='', depth=None, verbose=False):
         objects = self.list_objects(prefix=prefix, depth=depth, include_directories=False, verbose=verbose)
         urls = [auth.generate_url(self.s3_client, self.bucket.name, bucket_key, bucket_region=self.bucket.region, 
