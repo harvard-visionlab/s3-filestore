@@ -60,12 +60,12 @@ def prepare_data_for_upload(data, hash_length, data_format=None):
     # Compute SHA-256 checksum
     buffer.seek(0)
     sha256.update(buffer.read())
-    readable_hash = sha256.hexdigest()
+    full_hash = sha256.hexdigest()
 
     if isinstance(hash_length, (int)):
-        readable_hash = readable_hash[0:hash_length] 
+        readable_hash = full_hash[0:hash_length] 
 
     # Reset buffer position to the beginning
     buffer.seek(0)
     
-    return buffer, readable_hash, data_format
+    return buffer, full_hash, readable_hash, data_format

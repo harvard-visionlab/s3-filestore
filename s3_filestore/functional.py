@@ -2,6 +2,7 @@ import os
 import sys
 import torch
 import pandas as pd
+import requests
 import botocore
 import re
 import json 
@@ -12,6 +13,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, 
 from urllib.parse import urlparse
 
 from . import auth
+from . import api
 
 HASH_REGEX = re.compile(r'-([a-f0-9]*)\.')
 CACHE_DIR = torch.hub.get_dir().replace("/hub", "/results")
@@ -41,6 +43,9 @@ def download_if_needed(url, cache_dir=None, progress=True, check_hash=True) -> M
         if check_hash:
             r = HASH_REGEX.search(filename)  # r is Optional[Match[str]]
             hash_prefix = r.group(1) if r else None
+        if hash_prefix is None:
+            hash_prefix = api.get_s3_url_metadata(url, key='sha256')
+            
         download_url_to_file(url, cache_filename, hash_prefix, progress=progress)
 
     return cache_filename
@@ -71,7 +76,11 @@ def upload_file(s3_client, bucket, local_filename, object_key, acl=None, verbose
           raise e
 
     # Upload the file
-    bucket.Object(object_key).put(Body=open(local_filename, 'rb'), ACL=acl)
+    if metadata is not None:
+        bucket.Object(object_key).put(Body=open(local_filename, 'rb'), ACL=acl, Metadata=metadata)
+    else:
+        bucket.Object(object_key).put(Body=open(local_filename, 'rb'), ACL=acl)
+        
     object_url = auth.generate_url(s3_client, bucket.name, object_key, bucket_region=bucket.region, 
                                    profile=profile, expires_in_seconds=expires_in_seconds)
     if verbose: 
@@ -80,7 +89,7 @@ def upload_file(s3_client, bucket, local_filename, object_key, acl=None, verbose
     
     return object_url  
 
-def upload_buffer(s3_client, bucket, buf, object_key, acl=None, verbose=True, profile='wasabi', expires_in_seconds=3600):
+def upload_buffer(s3_client, bucket, buf, object_key, acl=None, verbose=True, profile='wasabi', expires_in_seconds=3600, metadata=None):
     """
     Upload a buffer to an S3 bucket, comparing sizes to avoid redundant uploads.
     
@@ -124,7 +133,10 @@ def upload_buffer(s3_client, bucket, buf, object_key, acl=None, verbose=True, pr
 
     # Upload the buffer
     buf.seek(0)
-    bucket.Object(object_key).put(Body=buf, ACL=acl)
+    if metadata is not None:
+        bucket.Object(object_key).put(Body=buf, ACL=acl, Metadata=metadata)
+    else:
+        bucket.Object(object_key).put(Body=buf, ACL=acl, Metadata=metadata)
     object_url = auth.generate_url(s3_client, bucket.name, object_key, bucket_region=bucket.region, 
                                    profile=profile, expires_in_seconds=expires_in_seconds)
     if verbose: 
@@ -218,3 +230,4 @@ def file_exists(s3_client, bucket_name, key):
             # Something else has gone wrong.
             print(f"An error occurred: {e}")
             raise
+            

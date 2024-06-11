@@ -103,8 +103,9 @@ class S3FileStore(object):
 
     def download_object(self, bucket_key, cache_dir=None, progress=True, check_hash=True):
         if cache_dir is None: cache_dir = self.cache_dir
-        return F.download_object(self.s3_client, self.bucket.name, bucket_key, self.profile, bucket_region=self.bucket.region,
-                                 cache_dir=cache_dir, progress=progress, check_hash=check_hash)
+        return F.download_object(self.s3_client, self.bucket.name, bucket_key, self.profile,
+                                 bucket_region=self.bucket.region, cache_dir=cache_dir, 
+                                 progress=progress, check_hash=check_hash)
 
     def download_objects(self, objects, cache_dir=None, progress=True, check_hash=True):
         filenames = [self.download_object(object_key, cache_dir=cache_dir, progress=progress, check_hash=check_hash) 
@@ -121,7 +122,15 @@ class S3FileStore(object):
                      for url in urls]
         
         return filenames    
-
+    
+    def get_metadata(self, file, key=None):
+        if file.startswith("https://"):
+            metadata = api.get_s3_url_metadata(file, key=key)
+        else:
+            metadata = api.get_s3_object_metadata(self.s3_client, self.bucket.name, file, key=key)
+        
+        return metadata
+            
     def upload_file(self, local_filename, bucket_subfolder, new_filename=None, acl=None, hash_length=None, verbose=True, profile=None, expires_in_seconds=None):        
         if acl is None: acl = self.acl
         if hash_length is None: hash_length = self.hash_length
@@ -150,24 +159,30 @@ class S3FileStore(object):
     def update_object_acl(self, object_key, acl, verbose=True):
         return api.update_object_acl(self.s3_client, self.bucket.name, object_key, acl, verbose=verbose)
 
-    def upload_data(self, data, bucket_key, data_format=None, acl=None, hash_length=None, verbose=True, profile=None, expires_in_seconds=None):
+    def upload_data(self, data, bucket_key, data_format=None, acl=None, hash_length=None, verbose=True, profile=None, expires_in_seconds=None, add_hash_suffix=False):
         if acl is None: acl = self.acl
         if hash_length is None: hash_length = self.hash_length
         if profile is None: profile = self.profile
         if expires_in_seconds is None: expires_in_seconds = self.expires_in_seconds
 
         # get the buffer and hash_id
-        buf, hash_id, data_format = prepare_data_for_upload(data, hash_length, data_format=data_format)
-
+        buf, full_hash, hash_id, data_format = prepare_data_for_upload(data, hash_length, data_format=data_format)
+        
         # new filename with hash_id
         path = Path(bucket_key)
         bucket_subfolder = str(path.parent)
         if not bucket_subfolder.endswith('/'): bucket_subfolder += '/'
-        filename_with_hash_id = f"{path.stem}-{hash_id}{path.suffix}"
-        bucket_key = urljoin(bucket_subfolder, filename_with_hash_id)
+        if add_hash_suffix:
+            filename = f"{path.stem}-{hash_id}{path.suffix}"
+        else:
+            filename = path.name
+        
+        bucket_key = urljoin(bucket_subfolder, filename)
 
         url = F.upload_buffer(self.s3_client, self.bucket, buf, bucket_key, acl=acl, 
-                              verbose=verbose, profile=profile, expires_in_seconds=expires_in_seconds)
+                              verbose=verbose, profile=profile, 
+                              metadata={"sha256": full_hash},
+                              expires_in_seconds=expires_in_seconds)
 
         return bucket_key, url
 
