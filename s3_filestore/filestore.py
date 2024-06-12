@@ -40,8 +40,10 @@ class S3FileStore(object):
         tmp_session = auth.get_session_with_userdata(self.profile, region_name=None)
         # get region name for this bucket, add to endpoint_url
         region_name = auth.get_bucket_region(tmp_session, self.bucket_name, self.endpoint_url)
-        endpoint_url = self.endpoint_url.replace("s3.", f"s3.{region_name}.")
-
+        if region_name is not None:
+            endpoint_url = self.endpoint_url.replace("s3.", f"s3.{region_name}.")
+        else:
+            endpoint_url = self.endpoint_url
         # now we can start a proper session and setup bucket access:
         self.bucket_region = region_name
         self.session = auth.get_session_with_userdata(self.profile, region_name=region_name)
