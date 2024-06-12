@@ -96,7 +96,10 @@ def get_url(bucket_name, object_name, bucket_region=None, profile='wasabi'):
         bucket_region = get_bucket_location(bucket_name, profile=profile)
 
     # Construct the object URL
-    object_url = f"https://s3.{bucket_region}.{domain}/{bucket_name}/{object_name}"
+    if bucket_region is None:
+        object_url = f"https://s3.{domain}/{bucket_name}/{object_name}"
+    else:
+        object_url = f"https://s3.{bucket_region}.{domain}/{bucket_name}/{object_name}"
     
     return object_url
 
