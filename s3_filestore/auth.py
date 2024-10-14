@@ -36,7 +36,7 @@ def get_credentials(profile_name):
         S3_ENDPOINT_URL=endpoint_url
     )
 
-def get_userdata(profile='wasabi'):
+def get_userdata(profile=os.environ.get('S3_PROFILE', None)):
     try:
         from google.colab import userdata
     except ImportError:
@@ -57,12 +57,12 @@ def get_bucket_region(session, bucket_name, endpoint_url):
 
     return bucket_location 
 
-def get_bucket_location(bucket_name, profile='wasabi'):
+def get_bucket_location(bucket_name, profile=os.environ.get('S3_PROFILE', None)):
     s3_client = get_client_with_userdata(profile)
     bucket_location = s3_client.get_bucket_location(Bucket=bucket_name)['LocationConstraint']
     return bucket_location 
 
-def get_client_with_userdata(profile='wasabi'):
+def get_client_with_userdata(profile=os.environ.get('S3_PROFILE', None)):
     userdata = get_userdata(profile=profile)
     s3_client = boto3.client('s3', 
                              aws_access_key_id=userdata.get('S3_ACCESS_KEY_ID'),
@@ -81,7 +81,7 @@ def get_public_s3_object_url(bucket_name, object_name):
 
     return response    
 
-def generate_url(s3_client, bucket_name, bucket_key, bucket_region=None, profile='wasabi', expires_in_seconds=3600):
+def generate_url(s3_client, bucket_name, bucket_key, bucket_region=None, profile=os.environ.get('S3_PROFILE', None), expires_in_seconds=3600):
     if is_object_private(s3_client, bucket_name, bucket_key):        
         url = generate_presigned_url(s3_client, bucket_name, bucket_key, expires_in_seconds=expires_in_seconds)
     else:
@@ -89,7 +89,7 @@ def generate_url(s3_client, bucket_name, bucket_key, bucket_region=None, profile
     
     return url
 
-def get_url(bucket_name, object_name, bucket_region=None, profile='wasabi'):
+def get_url(bucket_name, object_name, bucket_region=None, profile=os.environ.get('S3_PROFILE', None)):
     domain = 'wasabisys.com' if 'wasabi' in profile else 'amazonaws.com'
 
     if bucket_region is None:
@@ -131,7 +131,7 @@ def is_object_public(s3_client, bucket_name, object_key):
         print(f"Error getting ACL for {object_key} in {bucket_name}: {e}")
         return False   
     
-def sign_url_if_needed(url, expires_in_seconds=3600, profile='wasabi'):
+def sign_url_if_needed(url, expires_in_seconds=3600, profile=os.environ.get('S3_PROFILE', None)):
     if is_url_public_readable(url):
         return url
         
